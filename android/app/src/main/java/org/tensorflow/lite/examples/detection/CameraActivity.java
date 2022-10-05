@@ -21,7 +21,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
+// import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -60,7 +60,7 @@ import org.tensorflow.lite.examples.detection.env.Logger;
 
 public abstract class CameraActivity extends AppCompatActivity
     implements OnImageAvailableListener,
-        Camera.PreviewCallback,
+        // Camera.PreviewCallback,
         CompoundButton.OnCheckedChangeListener,
         View.OnClickListener {
   private static final Logger LOGGER = new Logger();
@@ -110,8 +110,8 @@ public abstract class CameraActivity extends AppCompatActivity
     super.onCreate(null);
 
     Intent intent = getIntent();
-    //useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
-    useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_BACK);
+    useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_FRONT);
+    //useFacing = intent.getIntExtra(KEY_USE_FACING, CameraCharacteristics.LENS_FACING_BACK);
 
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -244,61 +244,63 @@ public abstract class CameraActivity extends AppCompatActivity
   protected byte[] getLuminance() {
     return yuvBytes[0];
   }
-
-  /** Callback for android.hardware.Camera API */
-  @Override
-  public void onPreviewFrame(final byte[] bytes, final Camera camera) {
-    if (isProcessingFrame) {
-      LOGGER.w("Dropping frame!");
-      return;
-    }
-
-    try {
-      // Initialize the storage bitmaps once when the resolution is known.
-      if (rgbBytes == null) {
-        Camera.Size previewSize = camera.getParameters().getPreviewSize();
-        previewHeight = previewSize.height;
-        previewWidth = previewSize.width;
-        //rgbBytes = new int[previewWidth * previewHeight];
-        //onPreviewSizeChosen(new Size(previewSize.width, previewSize.height), 90);
-          rgbBytes = new int[previewWidth * previewHeight];
-          int rotation = 90;
-          if (useFacing == CameraCharacteristics.LENS_FACING_FRONT) {
-              rotation = 270;
-          }
-          onPreviewSizeChosen(new Size(previewSize.width, previewSize.height), rotation);
-      }
-    } catch (final Exception e) {
-      LOGGER.e(e, "Exception!");
-      return;
-    }
-
-    isProcessingFrame = true;
-    yuvBytes[0] = bytes;
-    yRowStride = previewWidth;
-
-    imageConverter =
-        new Runnable() {
-          @Override
-          public void run() {
-            ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
-          }
-        };
-
-    postInferenceCallback =
-        new Runnable() {
-          @Override
-          public void run() {
-            camera.addCallbackBuffer(bytes);
-            isProcessingFrame = false;
-          }
-        };
-    processImage();
-  }
+//
+//  /** Callback for android.hardware.Camera API */
+//  @Override
+//  public void onPreviewFrame(final byte[] bytes, final Camera camera) {
+//    LOGGER.w("[MHS]onPreviewFrame!");
+//    if (isProcessingFrame) {
+//      LOGGER.w("Dropping frame!");
+//      return;
+//    }
+//
+//    try {
+//      // Initialize the storage bitmaps once when the resolution is known.
+//      if (rgbBytes == null) {
+//        Camera.Size previewSize = camera.getParameters().getPreviewSize();
+//        previewHeight = previewSize.height;
+//        previewWidth = previewSize.width;
+//        //rgbBytes = new int[previewWidth * previewHeight];
+//        //onPreviewSizeChosen(new Size(previewSize.width, previewSize.height), 90);
+//          rgbBytes = new int[previewWidth * previewHeight];
+//          int rotation = 90;
+//          if (useFacing == CameraCharacteristics.LENS_FACING_FRONT) {
+//              rotation = 270;
+//          }
+//          onPreviewSizeChosen(new Size(previewSize.width, previewSize.height), rotation);
+//      }
+//    } catch (final Exception e) {
+//      LOGGER.e(e, "Exception!");
+//      return;
+//    }
+//
+//    isProcessingFrame = true;
+//    yuvBytes[0] = bytes;
+//    yRowStride = previewWidth;
+//
+//    imageConverter =
+//        new Runnable() {
+//          @Override
+//          public void run() {
+//            ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
+//          }
+//        };
+//
+//    postInferenceCallback =
+//        new Runnable() {
+//          @Override
+//          public void run() {
+//            camera.addCallbackBuffer(bytes);
+//            isProcessingFrame = false;
+//          }
+//        };
+//    processImage();
+//  }
 
   /** Callback for Camera2 API */
   @Override
   public void onImageAvailable(final ImageReader reader) {
+    LOGGER.w("[MHS]onImageAvailable!");
     // We need wait until we have some size from onPreviewSizeChosen
     if (previewWidth == 0 || previewHeight == 0) {
       return;
@@ -506,7 +508,7 @@ public abstract class CameraActivity extends AppCompatActivity
                                 characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL);
 
 
-                LOGGER.i("Camera API lv2?: %s", useCamera2API);
+                LOGGER.i("useCamera2API lv2?: %s", useCamera2API);
                 return cameraId;
             }
         } catch (CameraAccessException e) {
@@ -516,13 +518,13 @@ public abstract class CameraActivity extends AppCompatActivity
         return null;
     }
 
-
- protected void setFragment() {
+    protected void setFragment() {
 
         this.cameraId = chooseCamera();
 
         Fragment fragment;
-        if (useCamera2API) {
+        //if (useCamera2API)
+        {
             CameraConnectionFragment camera2Fragment =
                     CameraConnectionFragment.newInstance(
                             new CameraConnectionFragment.ConnectionCallback() {
@@ -540,17 +542,18 @@ public abstract class CameraActivity extends AppCompatActivity
             camera2Fragment.setCamera(cameraId);
             fragment = camera2Fragment;
 
-        } else {
-
-          int facing = (useFacing == CameraCharacteristics.LENS_FACING_BACK) ?
-                          Camera.CameraInfo.CAMERA_FACING_BACK :
-                          Camera.CameraInfo.CAMERA_FACING_FRONT;
-            LegacyCameraConnectionFragment frag = new LegacyCameraConnectionFragment(this,
-                    getLayoutId(),
-                    getDesiredPreviewFrameSize(), facing);
-            fragment = frag;
-
         }
+//        else {
+//
+//          int facing = (useFacing == CameraCharacteristics.LENS_FACING_BACK) ?
+//                          Camera.CameraInfo.CAMERA_FACING_BACK :
+//                          Camera.CameraInfo.CAMERA_FACING_FRONT;
+//            LegacyCameraConnectionFragment frag = new LegacyCameraConnectionFragment(this,
+//                    getLayoutId(),
+//                    getDesiredPreviewFrameSize(), facing);
+//            fragment = frag;
+//
+//        }
 
         getFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
     }
